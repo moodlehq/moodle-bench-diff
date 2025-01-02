@@ -54,13 +54,13 @@ class ComparisonResult
      */
     public function getResults(): array
     {
-        // Sort by name.
-        // usort(
-        //     $this->results,
-        //     fn($a, $b): int => $a->scenario->name <=> $b->scenario->name,
-        // );
+        // Sort by comparison Type (total vs average).
+        usort(
+            $this->results,
+            fn($a, $b): int => $a->comparisonType <=> $b->comparisonType,
+        );
 
-        // Then sort by comparison type.
+        // Then sort by metric.
         usort(
             $this->results,
             fn($a, $b): int => $a->key <=> $b->key,

@@ -10,7 +10,7 @@ class Result
 
     public function __construct(
         public readonly Scenario $scenario,
-        public readonly string $name,
+        public readonly string $key,
         public readonly string $comparisonType,
         public readonly string $description,
         public readonly string $status,
@@ -64,6 +64,6 @@ class Result
 
     public function getSummary(): string
     {
-        return "{$this->scenario->name} - {$this->name}: {$this->description}";
+        return "{$this->scenario->name} - {$this->key}: {$this->description}";
     }
 }

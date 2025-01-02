@@ -92,7 +92,7 @@ class CompareResultsCommand extends Command
                     $table->addRow([
                         new TableCell($result->scenario->name, $failedStyling),
                         new TableCell(
-                            "{$result->name} ({$result->comparisonType})",
+                            "{$result->key} ({$result->comparisonType})",
                             $failedStyling,
                         ),
                         new TableCell($result->description, $failedStyling),
@@ -100,7 +100,7 @@ class CompareResultsCommand extends Command
                 }
                 $table->addRow([
                     $result->scenario->name,
-                    "{$result->name} ({$result->comparisonType})",
+                    "{$result->key} ({$result->comparisonType})",
                     $result->description,
                 ]);
             }
@@ -121,7 +121,7 @@ class CompareResultsCommand extends Command
                 array_map(
                     fn($result): array => [
                         $result->scenario->name,
-                        "{$result->name} ({$result->comparisonType})",
+                        "{$result->key} ({$result->comparisonType})",
                         $result->description,
                         $result->valueA,
                         $result->valueB,
