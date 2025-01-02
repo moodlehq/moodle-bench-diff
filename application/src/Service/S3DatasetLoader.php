@@ -24,7 +24,12 @@ class S3DatasetLoader implements DatasetLoaderInterface
         string $name,
     ): string {
         $this->validateDatasetName($name);
-        $filename = sprintf('%s.json', $name);
+
+        if (str_ends_with($name, '.json')) {
+            $filename = $name;
+        } else {
+            $filename = sprintf('%s.json', $name);
+        }
 
         return $this->params->get('app.s3_dataset_path') . '/' . $filename;
     }
