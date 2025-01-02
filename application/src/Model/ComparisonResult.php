@@ -2,23 +2,15 @@
 
 namespace App\Model;
 
-use App\Service\DatasetComparatorInterface;
-use stdClass;
-
 class ComparisonResult
 {
+    /** @var array<Result> */
     public array $results = [];
 
     public function addResult(
-        Scenario $scenario,
-        string $key,
-        int $result,
+        Result $result,
     ): void {
-        $this->results[] = [
-            'scenario' => $scenario,
-            'key' => $key,
-            'result' => $result,
-        ];
+        $this->results[] = $result;
     }
 
     public function getResultSummary(): array
@@ -30,7 +22,7 @@ class ComparisonResult
     public function isSuccessful(): bool
     {
         foreach ($this->results as $result) {
-            if ($result['result'] !== DatasetComparatorInterface::COMPARISON_SUCCESS) {
+            if ($result->isFailed()) {
                 return false;
             }
         }
@@ -41,11 +33,39 @@ class ComparisonResult
     public function isFailed(): bool
     {
         foreach ($this->results as $result) {
-            if ($result['result'] === DatasetComparatorInterface::COMPARISON_FAILURE) {
+            if ($result->isFailed()) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @return array<\App\Model\Result>
+     */
+    public function getFailures(): array
+    {
+        return array_filter($this->results, fn($result): bool => $result->isFailed());
+    }
+
+    /**
+     * @return array<\App\Model\Result>
+     */
+    public function getResults(): array
+    {
+        // Sort by name.
+        // usort(
+        //     $this->results,
+        //     fn($a, $b): int => $a->scenario->name <=> $b->scenario->name,
+        // );
+
+        // Then sort by comparison type.
+        usort(
+            $this->results,
+            fn($a, $b): int => $a->key <=> $b->key,
+        );
+
+        return $this->results;
     }
 }

@@ -46,4 +46,24 @@ class Scenario
 
         return $total / $count;
     }
+
+    public function getTotal(
+        string $key,
+    ): float {
+        $total = 0;
+
+        foreach ($this->data as $data) {
+            if (!isset($data[$key])) {
+                continue;
+            }
+
+            if (!is_numeric($data[$key])) {
+                throw new \InvalidArgumentException('Invalid data');
+            }
+
+            $total += $data[$key];
+        }
+
+        return $total;
+    }
 }
