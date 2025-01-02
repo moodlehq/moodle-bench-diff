@@ -6,7 +6,7 @@ use stdClass;
 
 class Scenario
 {
-    public readonly array $data;
+    public array $data;
 
     public function __construct(
         public readonly string $name,
