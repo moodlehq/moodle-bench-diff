@@ -7,7 +7,7 @@ use stdClass;
 
 class ComparisonResult
 {
-    public private(set) array $results;
+    public array $results = [];
 
     public function addResult(
         Scenario $scenario,

@@ -6,10 +6,10 @@ use stdClass;
 
 class Scenario
 {
-    public private(set) array $data;
+    public readonly array $data;
 
     public function __construct(
-        public private(set) string $name,
+        public readonly string $name,
     ) {
     }
 
