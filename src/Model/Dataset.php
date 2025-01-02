@@ -6,23 +6,23 @@ use stdClass;
 
 class Dataset
 {
-    public private(set) array $scenarios = [];
+    public array $scenarios = [];
 
     public function __construct(
-        public private(set) string $name,
-        public private(set) string $host,
-        public private(set) string $sitepath,
-        public private(set) string $group,
-        public private(set) string $rundesc,
-        public private(set) string $users,
-        public private(set) string $loopcount,
-        public private(set) string $rampup,
-        public private(set) string $throughput,
-        public private(set) string $size,
-        public private(set) string $baseversion,
-        public private(set) string $siteversion,
-        public private(set) string $sitebranch,
-        public private(set) string $sitecommit,
+        public readonly string $name,
+        public readonly string $host,
+        public readonly string $sitepath,
+        public readonly string $group,
+        public readonly string $rundesc,
+        public readonly string $users,
+        public readonly string $loopcount,
+        public readonly string $rampup,
+        public readonly string $throughput,
+        public readonly string $size,
+        public readonly string $baseversion,
+        public readonly string $siteversion,
+        public readonly string $sitebranch,
+        public readonly string $sitecommit,
     ) {
     }
 

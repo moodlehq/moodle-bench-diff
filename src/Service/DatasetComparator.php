@@ -39,11 +39,16 @@ class DatasetComparator implements DatasetComparatorInterface
                 $comparison = $average1 <=> $average2;
 
                 if ($comparison === $direction) {
-                    $this->logger->debug("{$scenario->name} - $key: {$average1} better than {$average2} (imrpoved)");
+                    $this->logger->debug("{$scenario->name} - $key: {$average1} better than {$average2} (improved)");
                     $result->addResult($scenario, $key, self::COMPARISON_SUCCESS);
                 } else {
-                    $this->logger->error("{$scenario->name} - $key: {$average1} worse than {$average2} (regressed)");
-                    $result->addResult($scenario, $key, self::COMPARISON_FAILURE);
+                    if ($this->comparisons->exceedsScenarioThreshold($key, $average1, $average2)) {
+                        $this->logger->error("{$scenario->name} - $key: {$average1} worse than {$average2} (exceeded threshold)");
+                        $result->addResult($scenario, $key, self::COMPARISON_FAILURE);
+                    } else {
+                        $this->logger->debug("{$scenario->name} - $key: {$average1} marginally worse than {$average2} (regressed)");
+                        $result->addResult($scenario, $key, self::COMPARISON_SUCCESS);
+                    }
                 }
             }
         }

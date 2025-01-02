@@ -5,7 +5,33 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.datasets_path: 'runs'
-    datasets_path: 'runs'
+    app.s3_dataset_path: 'performance/storage'
+    app.s3_bucket: '%env(AWS_S3_BUCKET)%'
+
+aws:
+    version: latest
+    region: '%env(AWS_REGION)%'
+    credentials:
+        key: '%env(AWS_ACCESS_KEY)%'
+        secret: '%env(AWS_ACCESS_SECRET_KEY)%'
+    S3:
+        version: '2006-03-01'
+
+monolog:
+    handlers:
+        # this "file_log" key could be anything
+        file_log:
+            type: stream
+            # log to var/log/(environment).log
+            path: "%kernel.logs_dir%/%kernel.environment%.log"
+            # log *all* messages (debug is lowest level)
+            level: debug
+
+        syslog_handler:
+            type: syslog
+            # log error-level messages and higher
+            level: error
+
 
 services:
     # default configuration for services in *this* file
@@ -24,3 +50,5 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Service\DatasetLoaderInterface:
+        alias: App\Service\S3DatasetLoader
