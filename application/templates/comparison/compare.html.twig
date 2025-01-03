@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Moodle Benchmark Comparisons: {{ before }} to {{ after }}{% endblock %}
+
+{% block body %}
+
+<select name="files[] size="30" multiple>
+{% for dataset in datasets %}
+    <option value={{ dataset.name }}>{{ dataset.getTitle() }}</option>
+{% endfor %}
+</select>
+
+{% endblock %}

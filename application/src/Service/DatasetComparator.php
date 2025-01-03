@@ -50,7 +50,7 @@ class DatasetComparator implements DatasetComparatorInterface
         $comparisonKeys = self::getAllKeys();
 
         $result = new ComparisonResult();
-        foreach ($dataset1->scenarios as $scenario) {
+        foreach ($dataset1->getScenarios() as $scenario) {
             foreach ($comparisonKeys as $key => $direction) {
                 $this->_compareTotals(
                     $scenario,

@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Available Comparisons{% endblock %}
+
+{% form_theme datasetFilterForm 'bootstrap_5_layout.html.twig' %}
+
+{% block body %}
+
+<h1>Moodle Performance Benchmark Toolset</h1>
+
+{{ form_start(datasetFilterForm) }}
+  <div class="h4 pb-2 mb-4 border-bottom">Site configuration</div>
+  <div class="col-md-6">
+    {{form_row(datasetFilterForm.branch)}}
+  </div>
+
+  <div class="col-md-6">
+    {{form_row(datasetFilterForm.size)}}
+  </div>
+
+  <div class="row mb-3">
+    <div class="h4 pb-2 mb-4 border-bottom">Test configuration</div>
+    <div class="col-md-6">
+      {{form_row(datasetFilterForm.users)}}
+    </div>
+    <div class="col-md-6">
+      {{form_row(datasetFilterForm.loops)}}
+    </div>
+    <div class="col-md-6">
+      {{form_row(datasetFilterForm.throughput)}}
+    </div>
+    <div class="col-md-6">
+      {{form_row(datasetFilterForm.rampup)}}
+    </div>
+  </div>
+
+{{ form_end(datasetFilterForm) }}
+
+<div class="h4 pb-2 mb-4 border-bottom">Available datasets</div>
+{{ form(datasetComparisonForm) }}
+
+
+{% if datasetsToCompare %}
+    <div class="h4 pb-2 mb-4 border-bottom">Run Information</div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Metric</th>
+                {% for dataset in datasetsToCompare %}
+                <th>{{ dataset.getShortTitle() }}
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th>Moodle Branch</th>
+                {% for dataset in datasetsToCompare %}
+                <td>{{ dataset.branch }}
+                {% endfor %}
+            </tr>
+            <tr>
+                <th>Time</th>
+                {% for dataset in datasetsToCompare %}
+                <td>{{ dataset.getRuntime() | date('Y-m-d\\TH:i:sP') }}
+                {% endfor %}
+            </tr>
+            <tr>
+                <th>Description</th>
+                {% for dataset in datasetsToCompare %}
+                <td>{{ dataset.getRunDescription() }}
+                {% endfor %}
+            </tr>
+            <tr>
+                <th>Users</th>
+                {% for dataset in datasetsToCompare %}
+                <td>{{ dataset.users }}
+                {% endfor %}
+            </tr>
+            <tr>
+                <th>Site version</th>
+                {% for dataset in datasetsToCompare %}
+                <td>{{ dataset.getBaseVersion() }}
+                {% endfor %}
+            </tr>
+
+        </tbody>
+    </table>
+
+    <div class="h4 pb-2 mb-4 border-bottom">Run Comparisons</div>
+    {% for key,chart in charts %}
+    <div class="h5 pb-2 mb-4">{{ key }}</div>
+        {{ render_chart(chart) }}
+    {% endfor %}
+
+{% endif %}
+{% endblock %}
