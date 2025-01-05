@@ -4,8 +4,8 @@ on: [push, pull_request, workflow_dispatch]
 
 env:
   REPOSITORY: moodle-bench-diff
-  DOCKERHUB_OWNER: andrewnicols
-  GH_OWNER: andrewnicols
+  DOCKERHUB_OWNER: moodlehq
+  GH_OWNER: moodlehq
 
 jobs:
   Test:
@@ -20,7 +20,7 @@ jobs:
 
   Publish:
     # Completely avoid forks and pull requests to try this job.
-    if: github.repository_owner == 'andrewnicols' && contains(fromJson('["push", "workflow_dispatch"]'), github.event_name)
+    if: github.repository_owner == 'moodlehq' && contains(fromJson('["push", "workflow_dispatch"]'), github.event_name)
     # Requires Test to pass
     needs: Test
     runs-on: ubuntu-latest
