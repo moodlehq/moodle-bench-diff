@@ -96,11 +96,6 @@ class S3DatasetLoader implements
                 return [];
             }
 
-            // array_push($allResults, ...array_map(
-            //     fn ($object) => $object,
-            //     $results->get('Contents'),
-            // ));
-
             array_push($allResults, ...$results->get('Contents'));
 
             if ($results->get('isTruncated')) {

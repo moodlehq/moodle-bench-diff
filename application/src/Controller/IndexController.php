@@ -27,7 +27,10 @@ class IndexController extends AbstractController
     public function index(
         Request $request,
     ): Response {
+        // Load all datasets.
         $datasets = $this->datasetLoader->listDatasets('');
+
+        // Create the filter form.
         $datasetFilterForm = $this->createForm(
             DatasetFilterType::class,
             options: [
@@ -35,6 +38,7 @@ class IndexController extends AbstractController
             ],
         );
 
+        // Apply the filter to the datasets.
         $datasetFilterForm->handleRequest($request);
         if ($datasetFilterForm->isSubmitted() && $datasetFilterForm->isValid()) {
             $data = $datasetFilterForm->getData();
@@ -58,19 +62,58 @@ class IndexController extends AbstractController
             $filteredDatasets = $datasets;
         }
 
-        usort($datasets, function ($a, $b) {
+        // Sort the available datasets by runtime.
+        usort($filteredDatasets, function ($a, $b) {
             return $b->getRunTime() <=> $a->getRunTime();
         });
 
+        $datasetsToCompare = [];
+        if ($request->query->has('compare')) {
+            // Check the query string for comparison data.
+            $getParams = $request->query->all();
+            $comparisons = $getParams['compare'];
+
+            // Suffix with the .json extension if it isn't already there.
+            $comparisons = array_map(
+                fn ($comparison): string => str_ends_with($comparison, ".json") ? $comparison : "{$comparison}.json",
+                $comparisons,
+            );
+
+            $datasetsToCompare = array_filter(
+                $datasets,
+                function ($dataset) use ($comparisons): bool {
+                    if (in_array($dataset->getName(), $comparisons)) {
+                        return true;
+                    }
+
+                    foreach ($comparisons as $comparison) {
+                        if (str_ends_with($dataset->getName(), $comparison)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                },
+            );
+        }
+
+        // Create the comparison selection form.
         $datasetComparisonForm = $this->createForm(
             DatasetComparisonType::class,
+            data: [
+                'datasets' => array_map(
+                    fn ($dataset): string => $dataset->getName(),
+                    $datasetsToCompare,
+                ),
+            ],
             options: [
-                'datasets' => $datasets,
+                'datasets' => $filteredDatasets,
             ],
         );
 
         $datasetComparisonForm->handleRequest($request);
         if ($datasetComparisonForm->isSubmitted() && $datasetComparisonForm->isValid()) {
+            // Check for submitted comparison form.
             $data = $datasetComparisonForm->getData();
 
             $datasetsToCompare = array_filter(
@@ -79,18 +122,8 @@ class IndexController extends AbstractController
                     return in_array($dataset->getName(), $data['datasets']);
                 },
             );
-
-            $datasetsToCompare = array_filter(
-                $datasets,
-                function ($dataset) use ($data): bool {
-                    return in_array($dataset->getName(), $data['datasets']);
-                },
-            );
-            $charts = $this->getCharts($datasetsToCompare);
-
-        } else {
-            $datasetsToCompare = [];
         }
+        $charts = $this->getCharts($datasetsToCompare);
 
         return $this->render('index/index.html.twig', [
             'datasets' => $datasets,
@@ -141,7 +174,7 @@ class IndexController extends AbstractController
 
         $chart->setData([
             'labels' => array_values($scenarios),
-            'datasets' => $data,
+            'datasets' => array_values($data),
         ]);
 
         $chart->setOptions([
