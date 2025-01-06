@@ -3,6 +3,8 @@ namespace App\Service;
 
 use App\Model\Dataset;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 
 class S3DatasetLoader implements
@@ -80,10 +82,16 @@ class S3DatasetLoader implements
     }
 
     public function listDatasets(
-        string $matching,
+        string $matching = '',
+        ?SymfonyStyle $io = null,
     ): array {
         $continuationToken = null;
         $allResults = [];
+
+        if ($io !== null) {
+            $io->title('Listing datasets');
+            $io->progressStart(100);
+        }
 
         do {
             $results = $this->s3Client->listObjectsV2([
@@ -92,13 +100,17 @@ class S3DatasetLoader implements
                 'ContinuationToken' => $continuationToken,
             ]);
 
+            if ($io) {
+                $io->progressAdvance();
+            }
+
             if ($results->get('KeyCount') === 0) {
                 return [];
             }
 
             array_push($allResults, ...$results->get('Contents'));
 
-            if ($results->get('isTruncated')) {
+            if ($results->get('IsTruncated')) {
                 $continuationToken = $results->get('NextContinuationToken');
             } else {
                 $continuationToken = null;
@@ -110,21 +122,40 @@ class S3DatasetLoader implements
             fn (array $result): bool => str_ends_with($result['Key'], '.json'),
         );
 
-        return $this->_loadDatasetSummaries($filteredResults);
+        if ($io !== null) {
+            $io->progressFinish();
+            $io->title('Fetching dataset summaries');
+            $io->progressStart(count($filteredResults));
+        }
+
+        $summaries = $this->_loadDatasetSummaries(
+            $filteredResults,
+            $io,
+        );
+
+        if ($io) {
+            $io->progressFinish();
+        }
+
+        return $summaries;
     }
 
     /**
      * Summary of _loadDatasetSummaries
-     * @param array<Key: string, LastModified: string> $datasetNames
+     *
+     * @param  array<Key: string, LastModified: string> $datasetNames
+     * @param  SymfonyStyle|null $io
+     *
      * @return array
      */
     private function _loadDatasetSummaries(
         array $datasetNames,
+        ?SymfonyStyle $io = null,
     ): array {
         $cache = new FilesystemAdapter('datasets');
 
         $loadedDatasets = array_map(
-            function ($datasetReference) use ($cache): Dataset {
+            function ($datasetReference) use ($cache, $io): Dataset {
                 $datasetName = $datasetReference['Key'];
                 $cacheValue = $cache->getItem($this->_getCacheKeyforDataset($datasetName));
                 if ($cacheValue->isHit()) {
@@ -136,6 +167,10 @@ class S3DatasetLoader implements
                     $dataset = $this->loadFullDataset($datasetName, true);
                     $cacheValue->set($dataset->getCacheValue());
                     $cache->save($cacheValue);
+                }
+
+                if ($io) {
+                    $io->progressAdvance();
                 }
 
                 return $dataset;
