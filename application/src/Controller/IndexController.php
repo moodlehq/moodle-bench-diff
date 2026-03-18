@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Form\DatasetComparisonType;
 use App\Form\DatasetFilterType;
-use App\Service\Comparisons;
+use App\Service\DatasetComparator;
 use App\Service\DatasetFilter;
 use App\Service\DatasetLoaderInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,7 +20,7 @@ class IndexController extends AbstractController
         private DatasetLoaderInterface $datasetLoader,
         private DatasetFilter $datasetFilter,
         private ChartBuilderInterface $chartBuilder,
-        private Comparisons $comparisons,
+        private DatasetComparator $comparisons,
     ) {}
 
     #[Route('/', name: 'datasetList')]
@@ -145,7 +145,7 @@ class IndexController extends AbstractController
         });
         $scenarios = array_unique($scenarios);
 
-        $keys = array_keys($this->comparisons->getComparisonKeys());
+        $keys = array_keys(DatasetComparator::getAllKeys());
 
         foreach ($keys as $key) {
             $charts[$key] = $this->getChart($datasetsToCompare, $scenarios, $key);

@@ -15,8 +15,11 @@ class ComparisonResult
 
     public function getResultSummary(): array
     {
+        $summaries = [];
         foreach ($this->results as $result) {
+            $summaries[] = $result->getSummary();
         }
+        return $summaries;
     }
 
     public function isSuccessful(): bool
@@ -54,18 +57,14 @@ class ComparisonResult
      */
     public function getResults(): array
     {
-        // Sort by comparison Type (total vs average).
+        $sorted = $this->results;
+
+        // Sort by key first, then by comparison type (total vs average) for stable output.
         usort(
-            $this->results,
-            fn($a, $b): int => $a->comparisonType <=> $b->comparisonType,
+            $sorted,
+            fn($a, $b): int => ($a->key <=> $b->key) ?: ($a->comparisonType <=> $b->comparisonType),
         );
 
-        // Then sort by metric.
-        usort(
-            $this->results,
-            fn($a, $b): int => $a->key <=> $b->key,
-        );
-
-        return $this->results;
+        return $sorted;
     }
 }
