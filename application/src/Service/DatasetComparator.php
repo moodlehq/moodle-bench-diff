@@ -27,7 +27,10 @@ class DatasetComparator implements DatasetComparatorInterface
 
     public const array TOTAL_THRESHOLDS = [
         'dbreads' => 2,
-        'dbwrites' => 2,
+        // Absorbs timing-dependent session `lastaccess` writes (+1 write
+        // per loop is common noise, not a regression). 6 = PERF_LOOPS(5) + 1
+        // for the XS CI job; see docs/ci-intermittent-failures.md.
+        'dbwrites' => 6,
         'dbquerytime' => 2,
         'memoryused' => 2,
         'filesincluded' => 1,
@@ -279,12 +282,22 @@ class DatasetComparator implements DatasetComparatorInterface
             'time',
             'latency',
             'bytes',
+            // Load average of the shared CI worker, not the code under test.
+            // Swings by tens of points between otherwise-identical runs
+            // (observed: 4 to 62) depending on what else is running on the
+            // worker at the time. See docs/ci-intermittent-failures.md in
+            // moodlehq/moodle-performance for the investigation.
+            'serverload',
         ];
     }
 
     public static function isKeyIgnored(string $key): bool
     {
-        return isset(self::getIgnoredKeys()[$key]);
+        // NOTE: getIgnoredKeys() returns a plain list (numeric keys), so
+        // isset($list[$key]) was checking for a numeric offset named e.g.
+        // "dbquerytime" and never matched - this always returned false.
+        // in_array() checks list membership by value, as intended.
+        return in_array($key, self::getIgnoredKeys(), true);
     }
 
     /**
