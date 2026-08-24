@@ -111,7 +111,11 @@ class DatasetComparator implements DatasetComparatorInterface
                 ),
             );
         } else {
-            $comparison = $total1 <=> $total2;
+            // $direction states which way is better, as the spaceship result of
+            // after <=> before. The after value must therefore lead: comparing
+            // $total1 <=> $total2 asks whether the *before* improved on the
+            // after, which inverts every verdict.
+            $comparison = $total2 <=> $total1;
 
             if ($comparison === $direction) {
                 $resultSet->addResult(
@@ -119,7 +123,7 @@ class DatasetComparator implements DatasetComparatorInterface
                         $scenario1,
                         $key,
                         'total',
-                        "{$total1} better than {$total2} (improved)",
+                        "{$total2} better than {$total1} (improved)",
                         $total1,
                         $total2,
                     ),
@@ -131,7 +135,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                         'total',
-                            "{$total1} worse than {$total2} (ignored)",
+                            "{$total2} worse than {$total1} (ignored)",
                             $total1,
                             $total2,
                         ),
@@ -142,7 +146,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                             'total',
-                            "{$total1} worse than {$total2} (exceeded threshold)",
+                            "{$total2} worse than {$total1} (exceeded threshold)",
                             $total1,
                             $total2,
                         ),
@@ -153,7 +157,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                             'total',
-                            "{$total1} marginally worse than {$total2} (regressed)",
+                            "{$total2} marginally worse than {$total1} (regressed)",
                             $total1,
                             $total2,
                         ),
@@ -199,7 +203,8 @@ class DatasetComparator implements DatasetComparatorInterface
                 ),
             );
         } else {
-            $comparison = $average1 <=> $average2;
+            // See the note in _compareTotals(): the after value leads.
+            $comparison = $average2 <=> $average1;
 
             if ($comparison === $direction) {
                 $resultSet->addResult(
@@ -207,7 +212,7 @@ class DatasetComparator implements DatasetComparatorInterface
                         $scenario1,
                         $key,
                         'average',
-                        "{$average1} better than {$average2} (improved)",
+                        "{$average2} better than {$average1} (improved)",
                         $average1,
                         $average2,
                     ),
@@ -219,7 +224,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                         'average',
-                            "{$average1} worse than {$average2} (ignored)",
+                            "{$average2} worse than {$average1} (ignored)",
                             $average1,
                             $average2,
                         ),
@@ -230,7 +235,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                             'average',
-                            "{$average1} worse than {$average2} (exceeded threshold)",
+                            "{$average2} worse than {$average1} (exceeded threshold)",
                             $average1,
                             $average2,
                         ),
@@ -241,7 +246,7 @@ class DatasetComparator implements DatasetComparatorInterface
                             $scenario1,
                             $key,
                             'average',
-                            "{$average1} marginally worse than {$average2} (regressed)",
+                            "{$average2} marginally worse than {$average1} (regressed)",
                             $average1,
                             $average2,
                         ),
