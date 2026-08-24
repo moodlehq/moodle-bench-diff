@@ -3,6 +3,7 @@ namespace App\Command;
 
 use App\Service\DatasetComparatorInterface;
 use App\Service\DatasetLoaderInterface;
+use App\Service\LocalPathDatasetLoader;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -21,6 +22,7 @@ class CompareResultsCommand extends Command
     public function __construct(
         private DatasetLoaderInterface $datasetLoader,
         private DatasetComparatorInterface $datasetComparator,
+        private LocalPathDatasetLoader $localDatasetLoader,
     ) {
         parent::__construct();
     }
@@ -32,6 +34,13 @@ class CompareResultsCommand extends Command
             ->setHelp('This command allows you to compare results from Moodle Performance runs.')
             ->addArgument('before', InputArgument::REQUIRED, 'The before file')
             ->addArgument('after', InputArgument::REQUIRED, 'The after file')
+            ->addOption(
+                'local',
+                'l',
+                InputOption::VALUE_NONE,
+                'Treat the arguments as paths to local result files rather than stored dataset names. '
+                    . 'Needs no S3 credentials.',
+            )
         ;
     }
 
@@ -45,8 +54,9 @@ class CompareResultsCommand extends Command
         $io = new SymfonyStyle($input, $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output);
 
         // Load the datasets.
-        $beforeDataset = $this->datasetLoader->loadFullDataset($before);
-        $afterDataset = $this->datasetLoader->loadFullDataset($after);
+        $loader = $input->getOption('local') ? $this->localDatasetLoader : $this->datasetLoader;
+        $beforeDataset = $loader->loadFullDataset($before);
+        $afterDataset = $loader->loadFullDataset($after);
 
         $io->title(sprintf(
             "Comparing results between %s and %s",
