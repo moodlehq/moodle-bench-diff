@@ -91,13 +91,20 @@ run has regressed vs. a baseline. All app code lives under `application/`
 - Run locally: `symfony server:start` (or `symfony serve`) from `application/`;
   Docker image (`Dockerfile`) runs the same via
   `symfony server:start --port=80 --no-tls --allow-http`.
-- Run the CLI comparator: `php bin/console moodle:compare-results before.json after.json [-v]`
-  (paths are resolved against `app.datasets_path` = `runs/` for the file
-  loader, or S3 keys for the S3 loader).
-- No test suite currently exists in this repo (no `tests/` dir, no PHPUnit
-  config) despite `composer.json` declaring an `App\Tests\` PSR-4 autoload —
-  don't assume `composer test`/`phpunit` will work; verify changes via the
-  console commands above or by exercising the web UI.
+- Run the CLI comparator: `php bin/console moodle:compare-results before.json after.json [-v]`.
+  Names are resolved as S3 keys, because `services.yaml` binds
+  `DatasetLoaderInterface` to `S3DatasetLoader` — without AWS config the
+  command cannot run at all. Pass `--local` to treat the two arguments as
+  paths to result files on disk instead (uses `LocalPathDatasetLoader`, needs
+  no AWS credentials); this is the way to compare two runs you have locally.
+- Run the tests: `cd application && composer install && vendor/bin/phpunit`
+  (PHPUnit 11, config in `phpunit.dist.xml`). Coverage is limited to
+  `DatasetComparator` and `LocalPathDatasetLoader`; the web UI and the S3
+  loader are still only verifiable by hand. **If you touch the comparison
+  direction, the thresholds or the ignored-key list, the comparator tests are
+  the safety net — check they still fail when the behaviour is wrong, not just
+  that they pass.** Note `Scenario::getAverage()` divides by the number of
+  samples carrying a key, so fixtures must populate every metric key.
 - Front-end assets are managed via Symfony AssetMapper + importmap (see
   `importmap.php`, `assets/`), not webpack/npm — add JS via
   `assets/controllers/*.js` (Stimulus controllers, e.g. `hello_controller.js`)
