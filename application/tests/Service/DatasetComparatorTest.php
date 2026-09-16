@@ -234,4 +234,93 @@ class DatasetComparatorTest extends TestCase
         $this->assertStringContainsString('2880 worse than 2350', $total->description);
         $this->assertStringContainsString('576 worse than 470', $average->description);
     }
+
+    /**
+     * The exact shape of the job that prompted the growth budget: splitting
+     * monolithic lib.php files into autoloaded classes added 4 files to every
+     * scenario (479 -> 483, 0.84%) and failed the build on all 13 of them.
+     */
+    public function testStructuralFilesincludedGrowthDoesNotFailTheBuild(): void
+    {
+        $before = $this->makeDataset('moodle.git', 'filesincluded', [479, 479, 479, 479, 479]);
+        $after = $this->makeDataset('integration.git', 'filesincluded', [483, 483, 483, 483, 483]);
+
+        $comparison = (new DatasetComparator())->compare($before, $after);
+
+        $this->assertTrue($comparison->isSuccessful());
+        $this->assertSame([], $comparison->getFailures());
+
+        // Still reported as a regression, just not a build-breaking one.
+        $this->assertStringContainsString(
+            'marginally worse',
+            $this->findResult($comparison, 'filesincluded', 'average')->description,
+        );
+    }
+
+    /**
+     * The budget must not swallow a whole subsystem being pulled into every
+     * request. The router app found behind the import map was ~26 files on a
+     * 479-file page (5.4%), which is the class of regression this still has
+     * to catch.
+     */
+    public function testSubsystemSizedFilesincludedRegressionStillFails(): void
+    {
+        $before = $this->makeDataset('moodle.git', 'filesincluded', [479, 479, 479, 479, 479]);
+        $after = $this->makeDataset('integration.git', 'filesincluded', [505, 505, 505, 505, 505]);
+
+        $comparison = (new DatasetComparator())->compare($before, $after);
+
+        $this->assertTrue($comparison->isFailed());
+        $this->assertTrue($this->findResult($comparison, 'filesincluded', 'average')->isFailed());
+        $this->assertTrue($this->findResult($comparison, 'filesincluded', 'total')->isFailed());
+    }
+
+    /**
+     * A total is the sum over PERF_LOOPS, so an absolute threshold gates it
+     * five times more tightly than the average it comes from. The percentage
+     * budget has to land on the same verdict for both.
+     */
+    public function testTotalAndAverageAgreeOnTheSamePercentageChange(): void
+    {
+        // +2.5%, under the 3% budget, on both the average and the total.
+        $before = $this->makeDataset('before', 'filesincluded', [400, 400, 400, 400, 400]);
+        $after = $this->makeDataset('after', 'filesincluded', [410, 410, 410, 410, 410]);
+
+        $comparison = (new DatasetComparator())->compare($before, $after);
+
+        $this->assertFalse($this->findResult($comparison, 'filesincluded', 'average')->isFailed());
+        $this->assertFalse(
+            $this->findResult($comparison, 'filesincluded', 'total')->isFailed(),
+            'the total must not fail a change the average accepts',
+        );
+    }
+
+    /**
+     * The absolute threshold stays in force as a floor, so a metric whose
+     * baseline is small or zero does not end up with a budget of nothing.
+     */
+    public function testAbsoluteThresholdRemainsTheFloorForSmallBaselines(): void
+    {
+        // 3% of 0 is 0, so this is gated by SCENARIO_THRESHOLDS instead.
+        $this->assertFalse(
+            DatasetComparator::exceedsScenarioThreshold('filesincluded', 0.0, 1.0),
+            'a +1 change on a zero baseline is within the absolute floor',
+        );
+        $this->assertTrue(
+            DatasetComparator::exceedsScenarioThreshold('filesincluded', 0.0, 2.0),
+            'a change beyond the absolute floor must still fail on a zero baseline',
+        );
+    }
+
+    /**
+     * Metrics without a percentage budget must be unaffected.
+     */
+    public function testMetricsWithoutAPercentageBudgetAreUnchanged(): void
+    {
+        // 10% of 45 is 4.5, but dbreads has no budget, so its threshold of 2 holds.
+        $this->assertTrue(
+            DatasetComparator::exceedsScenarioThreshold('dbreads', 45.0, 48.0),
+            'dbreads must still be gated on its absolute threshold alone',
+        );
+    }
 }

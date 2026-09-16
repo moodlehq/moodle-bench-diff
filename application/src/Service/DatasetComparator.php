@@ -40,6 +40,30 @@ class DatasetComparator implements DatasetComparatorInterface
     ];
 
     /**
+     * Growth budgets, as a percentage of the before value.
+     *
+     * These are a different kind of allowance to the absolute thresholds
+     * above. Those absorb run-to-run measurement noise; these permit
+     * deliberate structural growth in a metric that is otherwise
+     * deterministic. The effective allowance is whichever is larger, so the
+     * absolute entry stays useful as a floor when the before value is small
+     * or zero.
+     *
+     * Applying a percentage also makes the total and the average agree.
+     * A total is the sum over PERF_LOOPS (5 for the XS job), so an absolute
+     * threshold gates the total five times more tightly than the average it
+     * is derived from - every such failure gets reported twice.
+     */
+    public const array PERCENTAGE_THRESHOLDS = [
+        // Splitting monolithic lib.php files into autoloaded classes raises
+        // this a few files at a time, and the job rebaselines on each weekly,
+        // so the budget is a per-comparison allowance for that refactor. Kept
+        // well below 10% so that a whole subsystem being pulled into every
+        // request - the router app is ~26 files - still fails the build.
+        'filesincluded' => 3.0,
+    ];
+
+    /**
      * Compare the two datasets.
      *
      * @param  \App\Model\Dataset $dataset1
@@ -326,7 +350,11 @@ class DatasetComparator implements DatasetComparatorInterface
             return false;
         }
 
-        return abs($before - $after) > self::SCENARIO_THRESHOLDS[$key];
+        return abs($before - $after) > self::getAllowance(
+            self::SCENARIO_THRESHOLDS[$key],
+            $key,
+            $before,
+        );
     }
 
     public static function exceedsTotalThreshold(
@@ -338,7 +366,37 @@ class DatasetComparator implements DatasetComparatorInterface
             return false;
         }
 
-        return abs($before - $after) > self::TOTAL_THRESHOLDS[$key];
+        return abs($before - $after) > self::getAllowance(
+            self::TOTAL_THRESHOLDS[$key],
+            $key,
+            $before,
+        );
+    }
+
+    /**
+     * The permitted change for a metric.
+     *
+     * The larger of the absolute threshold and, for metrics carrying a
+     * percentage budget, that percentage of the before value. Metrics without
+     * a percentage budget are gated on the absolute threshold alone.
+     *
+     * @param float $absolute The absolute threshold for this metric
+     * @param string $key The metric being compared
+     * @param float $before The baseline value the budget is calculated from
+     */
+    private static function getAllowance(
+        float $absolute,
+        string $key,
+        float $before,
+    ): float {
+        if (!array_key_exists($key, self::PERCENTAGE_THRESHOLDS)) {
+            return $absolute;
+        }
+
+        return max(
+            $absolute,
+            abs($before) * self::PERCENTAGE_THRESHOLDS[$key] / 100,
+        );
     }
 
 }
