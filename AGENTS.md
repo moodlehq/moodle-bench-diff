@@ -44,6 +44,18 @@ run has regressed vs. a baseline. All app code lives under `application/`
   success/failure. Some metrics (`dbquerytime`, `timeused`, `time`,
   `latency`, `bytes`) are always ignored via `isKeyIgnored()` even if they
   regress — these are considered too noisy to gate on.
+  There is a third map, `PERCENTAGE_THRESHOLDS`, holding a growth budget as a
+  percentage of the before value; the effective allowance is the larger of it
+  and the absolute threshold, so the absolute entry acts as a floor for small
+  or zero baselines. Keep the two kinds of allowance distinct when tuning:
+  the absolute maps absorb run-to-run *noise* (`dbwrites` and session
+  `lastaccess` timing), while a percentage budget permits deliberate
+  structural *growth* in a metric that is otherwise deterministic — currently
+  only `filesincluded`, which grows as monolithic `lib.php` files are split
+  into autoloaded classes. Note a total is the sum over `PERF_LOOPS`, so an
+  absolute threshold gates a total five times more tightly than the average
+  it derives from (which is why such failures are reported twice); a
+  percentage applies identically to both.
   ⚠️ `src/Service/Comparisons.php` is an **older duplicate** of this same
   threshold/key logic (used only by `IndexController` for chart metric keys)
   — don't "fix" one without checking if the same bug exists in the other;
